@@ -1,9 +1,9 @@
-./backend/vendor 
-./backend/internal
-./backend/.env
-./backend/.dockerignore
+backend/vendor 
+backend/internal
+backend/.env
+backend/.dockerignore
 
-./.dockerignore
-./.env
+.dockerignore
+.env
 
 
