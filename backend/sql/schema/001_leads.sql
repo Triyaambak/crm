@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS leads (
+  id UUID PRIMARY KEY, 
+  name TEXT NOT NULL,
+  phone TEXT,
+  created_at TIMESTAMP NOT NULL
+);

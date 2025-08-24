@@ -1,0 +1,5 @@
+./vendor
+./internal
+./main
+
+./Dockerfile
