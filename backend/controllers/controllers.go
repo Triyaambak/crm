@@ -1,26 +1,18 @@
 package controllers
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"time"
 
 	sqlc "github.com/triyaambak/CRM/internal/sqlc_db"
 	utils "github.com/triyaambak/CRM/utils"
 
-	"github.com/gorilla/mux"
+	"github.com/go-chi/chi/v5"
 	"github.com/triyaambak/CRM/config"
 )
 
 type Controller struct{}
-
-type LeadStruct struct {
-	Name      string         `json:"name"`
-	Phone     sql.NullString `json:"phone"`
-	CreatedAt time.Time      `json:"createdat"`
-}
 
 func (c *Controller) ServeHomePage() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -32,8 +24,14 @@ func (c *Controller) ServeHomePage() http.HandlerFunc {
 }
 
 func (c *Controller) AddLead(dbcfg *config.DbConfig) http.HandlerFunc {
+
+	type leadStruct struct {
+		Name  string `json:"name"`
+		Phone string `json:"phone"`
+	}
+
 	return func(w http.ResponseWriter, r *http.Request) {
-		var data LeadStruct
+		var data leadStruct
 
 		if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -43,10 +41,11 @@ func (c *Controller) AddLead(dbcfg *config.DbConfig) http.HandlerFunc {
 
 		h := utils.Helper{}
 
-		lead, err := h.CheckInputData(data.Name, data.Phone, data.CreatedAt)
+		lead, err := h.CheckInputData(data.Name, data.Phone)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			fmt.Fprintln(w, err)
+			return
 		}
 
 		if err := dbcfg.Query.CreateLead(r.Context(), lead); err != nil {
@@ -63,9 +62,9 @@ func (c *Controller) AddLead(dbcfg *config.DbConfig) http.HandlerFunc {
 
 func (c *Controller) GetLead(dbcfg *config.DbConfig) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID, ok := mux.Vars(r)["id"]
+		userID := chi.URLParam(r, "id")
 
-		if !ok {
+		if userID == "" {
 			http.Error(w, "No ID param found ", http.StatusBadRequest)
 			return
 		}
@@ -73,7 +72,7 @@ func (c *Controller) GetLead(dbcfg *config.DbConfig) http.HandlerFunc {
 		leadChan := make(chan sqlc.Lead)
 		errChan := make(chan error)
 
-		dbcfg.GetDataAsync(leadChan, errChan, r, fmt.Sprintf("SELECT * FROM LEADS WHERE ID=%s", userID))
+		go dbcfg.GetDataAsync(leadChan, errChan, r, fmt.Sprintf("SELECT * FROM LEADS WHERE ID=%s", userID))
 
 		var leads []sqlc.Lead
 		var errors []error
@@ -114,7 +113,7 @@ func (c *Controller) GetAllLeads(dbcfg *config.DbConfig) http.HandlerFunc {
 		leadsChan := make(chan sqlc.Lead)
 		errChan := make(chan error)
 
-		dbcfg.GetDataAsync(leadsChan, errChan, r, "SELECT * FROM LEADS")
+		go dbcfg.GetDataAsync(leadsChan, errChan, r, "SELECT * FROM LEADS")
 
 		var leads []sqlc.Lead
 		var errors []error

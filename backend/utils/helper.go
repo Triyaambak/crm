@@ -12,7 +12,7 @@ import (
 
 type Helper struct{}
 
-func (h *Helper) CheckInputData(name string, phone sql.NullString, createdat time.Time) (lead sqlc.CreateLeadParams, err error) {
+func (h *Helper) CheckInputData(name, phone string) (lead sqlc.CreateLeadParams, err error) {
 
 	lead = sqlc.CreateLeadParams{}
 
@@ -21,12 +21,10 @@ func (h *Helper) CheckInputData(name string, phone sql.NullString, createdat tim
 		return sqlc.CreateLeadParams{}, err
 	}
 
-	id := uuid.New()
-
-	lead.ID = id
+	lead.ID = uuid.New()
 	lead.Name = name
-	lead.Phone = phone
-	lead.CreatedAt = createdat
+	lead.Phone = sql.NullString{String: phone, Valid: phone != ""}
+	lead.CreatedAt = time.Now()
 
 	return lead, nil
 }
