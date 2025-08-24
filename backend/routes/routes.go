@@ -15,4 +15,5 @@ func SetUpRoutes(mux *chi.Mux, db *config.DbConfig) {
 	mux.Get("/leads", c.GetAllLeads(db))
 	mux.Get("/leads/{id}", c.GetLead(db))
 	mux.Post("/add", c.AddLead(db))
+	mux.Delete("/delete/{id}", c.DeleteLead(db))
 }

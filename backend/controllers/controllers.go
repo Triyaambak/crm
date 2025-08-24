@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/google/uuid"
 	sqlc "github.com/triyaambak/CRM/internal/sqlc_db"
 	utils "github.com/triyaambak/CRM/utils"
 
@@ -20,6 +21,33 @@ func (c *Controller) ServeHomePage() http.HandlerFunc {
 		//Or one more way to write on the Response object
 		// w.Write[]{"Welcome to home page"}
 		fmt.Fprintln(w, "Welcome to home page")
+	}
+}
+
+func (c *Controller) DeleteLead(dbcfg *config.DbConfig) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		idStr := chi.URLParam(r, "id")
+
+		if idStr == "" {
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprintln(w, "No id param found to delete the lead from database")
+		}
+
+		id, err := uuid.Parse(idStr)
+
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintln(w, "Something went from while parsing string into UUID in DeleteLead method ", err)
+		}
+
+		err = dbcfg.Query.DeleteLead(r.Context(), id)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintln(w, "Something went wrong while deleting the record from the database", err)
+		}
+
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, "%v row deleted from database", id)
 	}
 }
 
